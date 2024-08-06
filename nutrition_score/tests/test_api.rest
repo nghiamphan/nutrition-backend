@@ -1,0 +1,11 @@
+POST http://127.0.0.1:8000/api/barcode/00605388872074/
+Content-Type: application/json
+
+{
+    "energy_profile_factor": 0.25,
+    "saturation_profile_factor": 0.25,
+    "sugars_profile_factor": 0.25,
+    "sodium_profile_factor": 0.25,
+    "max_additives_penalty": 50,
+    "non_organic_penalty": 10
+}

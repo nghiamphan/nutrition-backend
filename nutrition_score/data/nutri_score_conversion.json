@@ -1,0 +1,94 @@
+{
+    "-3": {
+        "solid": 100,
+        "liquid": 77
+    },
+    "-2": {
+        "solid": 100,
+        "liquid": 74
+    },
+    "-1": {
+        "solid": 90,
+        "liquid": 71
+    },
+    "0": {
+        "solid": 80,
+        "liquid": 68
+    },
+    "1": {
+        "solid": 75,
+        "liquid": 65
+    },
+    "2": {
+        "solid": 70,
+        "liquid": 57
+    },
+    "3": {
+        "solid": 65,
+        "liquid": 49
+    },
+    "4": {
+        "solid": 60,
+        "liquid": 41
+    },
+    "5": {
+        "solid": 55,
+        "liquid": 33
+    },
+    "6": {
+        "solid": 50,
+        "liquid": 15
+    },
+    "7": {
+        "solid": 45,
+        "liquid": 11
+    },
+    "8": {
+        "solid": 40,
+        "liquid": 7
+    },
+    "9": {
+        "solid": 35,
+        "liquid": 3
+    },
+    "10": {
+        "solid": 30,
+        "liquid": 0
+    },
+    "11": {
+        "solid": 15,
+        "liquid": 0
+    },
+    "12": {
+        "solid": 13,
+        "liquid": 0
+    },
+    "13": {
+        "solid": 11,
+        "liquid": 0
+    },
+    "14": {
+        "solid": 9,
+        "liquid": 0
+    },
+    "15": {
+        "solid": 7,
+        "liquid": 0
+    },
+    "16": {
+        "solid": 5,
+        "liquid": 0
+    },
+    "17": {
+        "solid": 3,
+        "liquid": 0
+    },
+    "18": {
+        "solid": 1,
+        "liquid": 0
+    },
+    "19": {
+        "solid": 0,
+        "liquid": 0
+    }
+}
