@@ -36,7 +36,7 @@ FIBER_THRESHOLD = [3.0, 4.1, 5.2, 6.3, 7.4]
 FRUIT_THRESHOLD = [40, 60, 80, 80, 80]
 
 PROTEIN_BEVERAGES_THRESHOLD = [1.2, 1.5, 1.8, 2.1, 2.4, 2.7, 3.0]
-FRUITS_VEGETABLES_LEGUMES_BEVERAGES_THRESHOLD = [40, 40, 60, 60, 80, 80]
+FRUIT_BEVERAGES_THRESHOLD = [40, 40, 60, 60, 80, 80]
 
 # Category thresholds
 GENERAL_FODD_CATEGORY_THRESHOLD = [(0, "A"), (2, "B"), (10, "C"), (18, "D")]
@@ -141,9 +141,7 @@ class NutriScoreCalculator:
             fruit_points = self.points_by_threshold(self.fruit_percentage, FRUIT_THRESHOLD)
         else:
             protein_points = self.points_by_threshold(self.protein, PROTEIN_BEVERAGES_THRESHOLD)
-            fruit_points = self.points_by_threshold(
-                self.fruit_percentage, FRUITS_VEGETABLES_LEGUMES_BEVERAGES_THRESHOLD
-            )
+            fruit_points = self.points_by_threshold(self.fruit_percentage, FRUIT_BEVERAGES_THRESHOLD)
 
         if food_type in [GENERAL_FODD, RED_MEAT, CHEESE]:
             # If food type is red meat, the number of points for protein is limited to 2
