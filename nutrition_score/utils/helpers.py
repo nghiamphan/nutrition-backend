@@ -57,6 +57,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
             return None
 
         product_name = product.get("product_name", "")
+        brand = product.get("brands", "")
         image = product.get("image_url", "")
         ingredients = product.get("ingredients_text", "")
 
@@ -67,6 +68,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         negative = nutriscore_2023_data.get("components", {}).get("negative", {})
 
         energy = 0
+        energy_from_saturated_fat = 0
         saturated_fat = 0
         saturated_over_total_fat = 0
         sugars = 0
@@ -75,6 +77,8 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         for item in negative:
             if item.get("id") == "energy":
                 energy = item.get("value") or 0  # If the value is None, set it to 0
+            elif item.get("id") == "energy_from_saturated_fat":
+                energy_from_saturated_fat = item.get("value") or 0
             elif item.get("id") == "saturated_fat":
                 saturated_fat = item.get("value") or 0
             elif item.get("id") == "saturated_fat_ratio":
@@ -103,6 +107,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         # Put all the nutritional values in a dictionary
         nutritions = {
             ns.ENERGY: energy,
+            ns.ENERGY_FROM_SATURATES: energy_from_saturated_fat,
             ns.SATURATED_FAT: saturated_fat,
             ns.SATURATES_OVER_TOTAL_FAT: saturated_over_total_fat,
             ns.SUGARS: sugars,
@@ -172,6 +177,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
 
         return {
             "name": product_name,
+            "brand": brand,
             "image": image,
             "ingredients": ingredients,
             "nutriscore_scaled_100": nutriscore_scaled_100,
