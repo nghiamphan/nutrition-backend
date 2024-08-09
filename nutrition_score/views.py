@@ -29,7 +29,7 @@ def calculate_nutrition_score(request, barcode=None) -> Response:
     Returns
     -------
     Response
-        The response object containing the nutrition score of the product.
+        The response object containing the nutrition score and various information of the product.
 
         For example:
         {
@@ -40,7 +40,18 @@ def calculate_nutrition_score(request, barcode=None) -> Response:
             "additives": ["E100", "E200"],
             "additives_risk": 10,
             "organic": False,
-            "final_score": 30
+            "final_score": 30,
+            "food_type": "General food",
+            "energy": 100,
+            "energy_from_saturates": 0,
+            "saturated_fat": 20,
+            "saturates_over_total_fat": 0,
+            "sugars": 10,
+            "sodium": 10,
+            "nn_sweeteners": 0,
+            "protein": 10,
+            "fiber": 10,
+            "fruit_percentage": 0
         }
     """
     if not barcode:

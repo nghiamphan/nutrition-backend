@@ -34,7 +34,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
     Returns
     -------
     product infoormation : dict
-        The information of the product including its name, image, ingredients, nutri-score, additives, additives risk, organic, and final score.
+        The information of the product including its name, image, ingredients, nutri-score, additives, additives risk, organic, and final score, food type, and nutritional values.
         For example:
         {
             "name": "Product Name",
@@ -44,7 +44,18 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
             "additives": ["E100", "E200"],
             "additives_risk": 10,
             "organic": False,
-            "final_score": 30
+            "final_score": 30,
+            "food_type": "General food",
+            "energy": 100,
+            "energy_from_saturates": 0,
+            "saturated_fat": 20,
+            "saturates_over_total_fat": 0,
+            "sugars": 10,
+            "sodium": 10,
+            "nn_sweeteners": 0,
+            "protein": 10,
+            "fiber": 10,
+            "fruit_percentage": 0
         }
     """
     URL = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
@@ -185,6 +196,8 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
             "additives_risk": additives_risk,
             "organic": organic,
             "final_score": final_score,
+            "food_type": food_type,
+            **nutritions,
         }
     else:
         print(f"Error fetching product: {response.status}")
