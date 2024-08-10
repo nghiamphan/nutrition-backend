@@ -173,7 +173,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
 
         print(f"Additives risk: {additives_risk}, max additive penalty: {max_additive_penalty}")
 
-        additives_risk = min(additives_risk, 50)
+        additives_risk = min(additives_risk, max_additive_penalty)
 
         # Check if the product is organic
         labels = product.get("labels_tags", [])
