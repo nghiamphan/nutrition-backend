@@ -76,8 +76,6 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         nutriscore_2023_data = product.get("nutriscore", {}).get("2023", {}).get("data", {})
 
         # Get the negative components of the product
-        negative = nutriscore_2023_data.get("components", {}).get("negative", {})
-
         energy = 0
         energy_from_saturated_fat = 0
         saturated_fat = 0
@@ -85,35 +83,61 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         sugars = 0
         sodium = 0
         nn_sweeteners = 0
-        for item in negative:
-            if item.get("id") == "energy":
-                energy = item.get("value") or 0  # If the value is None, set it to 0
-            elif item.get("id") == "energy_from_saturated_fat":
-                energy_from_saturated_fat = item.get("value") or 0
-            elif item.get("id") == "saturated_fat":
-                saturated_fat = item.get("value") or 0
-            elif item.get("id") == "saturated_fat_ratio":
-                saturated_over_total_fat = item.get("value") or 0
-            elif item.get("id") == "sugars":
-                sugars = item.get("value") or 0
-            elif item.get("id") == "non_nutritive_sweeteners":
+
+        if nutriscore_2023_data.get("components", {}).get("negative", {}):
+            negative = nutriscore_2023_data.get("components", {}).get("negative", {})
+            for item in negative:
+                if item.get("id") == "energy":
+                    energy = item.get("value") or 0  # If the value is None, set it to 0
+                elif item.get("id") == "energy_from_saturated_fat":
+                    energy_from_saturated_fat = item.get("value") or 0
+                elif item.get("id") == "saturated_fat":
+                    saturated_fat = item.get("value") or 0
+                elif item.get("id") == "saturated_fat_ratio":
+                    saturated_over_total_fat = item.get("value") or 0
+                elif item.get("id") == "sugars":
+                    sugars = item.get("value") or 0
+                elif item.get("id") == "non_nutritive_sweeteners":
+                    nn_sweeteners = 4
+                elif item.get("id") == "salt":
+                    sodium = item.get("value") or 0
+        else:
+            if nutriscore_2023_data.get("energy"):
+                energy = nutriscore_2023_data.get("energy") or 0
+            if nutriscore_2023_data.get("energy_from_saturated_fat"):
+                energy_from_saturated_fat = nutriscore_2023_data.get("energy_from_saturated_fat") or 0
+            if nutriscore_2023_data.get("saturated_fat"):
+                saturated_fat = nutriscore_2023_data.get("saturated_fat") or 0
+            if nutriscore_2023_data.get("saturated_fat_ratio"):
+                saturated_over_total_fat = nutriscore_2023_data.get("saturated_fat_ratio") or 0
+            if nutriscore_2023_data.get("sugars"):
+                sugars = nutriscore_2023_data.get("sugars") or 0
+            if nutriscore_2023_data.get("non_nutritive_sweeteners"):
                 nn_sweeteners = 4
-            elif item.get("id") == "salt":
-                sodium = item.get("value") or 0
+            if nutriscore_2023_data.get("salt"):
+                sodium = nutriscore_2023_data.get("salt") or 0
 
         # Get the positive components of the product
-        positive = nutriscore_2023_data.get("components", {}).get("positive", {})
-
         protein = 0
         fiber = 0
         fruit_percentage = 0
-        for item in positive:
-            if item.get("id") == "proteins":
-                protein = item.get("value") or 0
-            elif item.get("id") == "fiber":
-                fiber = item.get("value") or 0
-            elif item.get("id") == "fruits_vegetables_legumes":
-                fruit_percentage = item.get("value") or 0
+
+        if nutriscore_2023_data.get("components", {}).get("positive", {}):
+            positive = nutriscore_2023_data.get("components", {}).get("positive", {})
+            for item in positive:
+                if item.get("id") == "proteins":
+                    protein = item.get("value") or 0
+                elif item.get("id") == "fiber":
+                    fiber = item.get("value") or 0
+                elif item.get("id") == "fruits_vegetables_legumes":
+                    fruit_percentage = item.get("value") or 0
+        else:
+            if nutriscore_2023_data.get("proteins"):
+                protein = nutriscore_2023_data.get("proteins") or 0
+            if nutriscore_2023_data.get("fiber"):
+                fiber = nutriscore_2023_data.get("fiber") or 0
+            if nutriscore_2023_data.get("fruits_vegetables_legumes"):
+                fruit_percentage = nutriscore_2023_data.get("fruits_vegetables_legumes") or 0
 
         # Put all the nutritional values in a dictionary
         nutritions = {
@@ -129,18 +153,16 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
             ns.FRUIT_PERCENTAGE: fruit_percentage,
         }
 
-        print(f"Nutritional values: {nutritions}")
-
         # Determine the type of food
-        if nutriscore_2023_data.get("is_red_meat_product") == 1:
+        if nutriscore_2023_data.get("is_red_meat_product"):
             food_type = ns.RED_MEAT
-        elif nutriscore_2023_data.get("is_cheese") == 1:
+        elif nutriscore_2023_data.get("is_cheese"):
             food_type = ns.CHEESE
-        elif nutriscore_2023_data.get("is_fat_oil_nuts_seeds") == 1:
+        elif nutriscore_2023_data.get("is_fat_oil_nuts_seeds"):
             food_type = ns.FATS_NUTS_SEEDS
-        elif nutriscore_2023_data.get("is_beverage") == 1:
+        elif nutriscore_2023_data.get("is_beverage"):
             food_type = ns.BEVERAGES
-        elif nutriscore_2023_data.get("is_water") == 1:
+        elif nutriscore_2023_data.get("is_water"):
             food_type = ns.WATER
         else:
             food_type = ns.GENERAL_FODD
@@ -170,8 +192,6 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         max_additive_penalty = profiles.get(c.MAX_ADDITIVES_PENALTY) or c.MAX_ADDITIVES_PENALTY_DEFAULT_VALUE
 
         additives_risk = calculate_additive_risk(additives)
-
-        print(f"Additives risk: {additives_risk}, max additive penalty: {max_additive_penalty}")
 
         additives_risk = min(additives_risk, max_additive_penalty)
 
