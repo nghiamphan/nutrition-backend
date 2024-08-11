@@ -7,8 +7,9 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
-from utils import nutri_score as ns
 from utils import constants as c
+from utils import nutri_score as ns
+from utils import process_image
 
 
 def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
@@ -206,6 +207,46 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
     else:
         print(f"Error fetching product: {response.status}")
         return None
+
+
+def process_image_and_calculate(image_path: str, food_type: str, profiles: dict) -> dict:
+    """
+    Calculate the nutrition score of a product from an image of a nutrition label.
+
+    Parameters
+    ----------
+    image_path : str
+        The path to the image file.
+    food_type : str
+        The type of food product.
+    profiles : dict
+        The profile factors to calculate the nutri-score.
+
+    Returns
+    -------
+    product information : dict
+        The product information including its name, image, ingredients, nutri-score, additives, additives risk, organic, and final score, food type, and nutritional values.
+    """
+    text = process_image.extract_text_from_image(image_path)
+    nutritions = process_image.extract_all_nutrient_info(text)
+
+    nutriscore_scaled_100 = calculate_nutriscore_scale_100(nutritions, food_type, profiles)
+
+    food_object = {
+        "name": "",
+        "brand": "",
+        "image": "",
+        "ingredients": "",
+        "nutriscore_scaled_100": nutriscore_scaled_100,
+        "additives": [],
+        "additives_risk": 0,
+        "organic": False,
+        "final_score": nutriscore_scaled_100,
+        "food_type": food_type,
+        **nutritions,
+    }
+
+    return food_object
 
 
 def calculate_nutriscore_scale_100(nutritional_values: dict, food_type: str, profiles: dict) -> int:
