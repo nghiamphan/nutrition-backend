@@ -33,7 +33,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
 
     Returns
     -------
-    product infoormation : dict
+    product information : dict
         The information of the product including its name, image, ingredients, nutri-score, additives, additives risk, organic, and final score, food type, and nutritional values.
         For example:
         {
@@ -167,23 +167,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         else:
             food_type = ns.GENERAL_FODD
 
-        # Calculate the nutri-score based on the nutritional values and the food type
-        calculator = ns.NutriScoreCalculator()
-
-        # Setup the profile factors to calculate the nutri-score
-        calculator.setup_profiles(
-            {
-                ns.ENERGY: profiles.get(c.ENERGY_PROFILE_FACTOR, c.ENERGY_PROFILE_FACTOR_DEFAULT_VALUE),
-                ns.SATURATED_FAT: profiles.get(c.SATURATION_PROFILE_FACTOR, c.SATURATION_PROFILE_FACTOR_DEFAULT_VALUE),
-                ns.SUGARS: profiles.get(c.SUGARS_PROFILE_FACTOR, c.SUGARS_PROFILE_FACTOR_DEFAULT_VALUE),
-                ns.SODIUM: profiles.get(c.SODIUM_PROFILE_FACTOR, c.SODIUM_PROFILE_FACTOR_DEFAULT_VALUE),
-            }
-        )
-
-        score = calculator.calculate(nutritions, food_type)
-
-        # Convert the nutri-score to a score on a scale of 0-100
-        nutriscore_scaled_100 = convert_nutri_score(score, food_type != ns.BEVERAGES)
+        nutriscore_scaled_100 = calculate_nutriscore_scale_100(nutritions, food_type, profiles)
 
         # Get the additives and calculate the risk
         additives = product.get("additives_tags", [])
@@ -222,6 +206,44 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
     else:
         print(f"Error fetching product: {response.status}")
         return None
+
+
+def calculate_nutriscore_scale_100(nutritional_values: dict, food_type: str, profiles: dict) -> int:
+    """
+    Calculate the nutri-score of a product on a scale of 0-100.
+
+    Parameters
+    ----------
+    nutritional_values : dict
+        The nutritional values of the product including energy, saturated fat, sugars, sodium, protein, fiber, and fruit percentage.
+    food_type : str
+        The type of food product.
+    profiles : dict
+        The profile factors to calculate the nutri-score.
+
+    Returns
+    -------
+    int
+        The nutri-score value (-15 to 40).
+    """
+    calculator = ns.NutriScoreCalculator()
+
+    # Setup the profile factors to calculate the nutri-score
+    calculator.setup_profiles(
+        {
+            ns.ENERGY: profiles.get(c.ENERGY_PROFILE_FACTOR, c.ENERGY_PROFILE_FACTOR_DEFAULT_VALUE),
+            ns.SATURATED_FAT: profiles.get(c.SATURATION_PROFILE_FACTOR, c.SATURATION_PROFILE_FACTOR_DEFAULT_VALUE),
+            ns.SUGARS: profiles.get(c.SUGARS_PROFILE_FACTOR, c.SUGARS_PROFILE_FACTOR_DEFAULT_VALUE),
+            ns.SODIUM: profiles.get(c.SODIUM_PROFILE_FACTOR, c.SODIUM_PROFILE_FACTOR_DEFAULT_VALUE),
+        }
+    )
+
+    score = calculator.calculate(nutritional_values, food_type)
+
+    # Convert the nutri-score to a score on a scale of 0-100
+    nutriscore_scaled_100 = convert_nutri_score(score, food_type != ns.BEVERAGES)
+
+    return nutriscore_scaled_100
 
 
 def convert_nutri_score(nutri_score: int, solid: bool) -> int:

@@ -1,3 +1,4 @@
+### Coca Cola
 POST http://127.0.0.1:8000/api/barcode/00605388872074/
 Content-Type: application/json
 
@@ -9,3 +10,23 @@ Content-Type: application/json
     "max_additives_penalty": 50,
     "non_organic_penalty": 10
 }
+
+### Earth Own Unweetened Oat Milk
+POST http://127.0.0.1:8000/api/barcode/00626027841022/
+Content-Type: application/json
+
+### Minute Rice
+POST http://127.0.0.1:8000/api/barcode/00059100008027/
+Content-Type: application/json
+
+### Chosen Foods Avocado Oil
+POST http://127.0.0.1:8000/api/barcode/00853807005828/
+Content-Type: application/json
+
+### Lean Ground Beef
+POST http://127.0.0.1:8000/api/barcode/628915825206/
+Content-Type: application/json
+
+### Great value  cheddar cheese (extract has problem)
+POST http://127.0.0.1:8000/api/barcode/68200885117/
+Content-Type: application/json
