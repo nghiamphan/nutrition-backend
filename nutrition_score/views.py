@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 
@@ -62,12 +63,12 @@ def calculate_nutrition_score(request, barcode=None) -> Response:
     if not barcode:
         return Response({"error": "Barcode is required"}, status=400)
 
-    profiles = request.data
+    profile = request.data
 
-    food_object = helpers.fetch_and_calculate(barcode, profiles)
+    food_object = helpers.fetch_and_calculate(barcode, profile)
 
     if not food_object:
-        return Response({"error": "Product not found"}, status=404)
+        return Response({"error": "Nutritional values not found"}, status=404)
 
     return Response(food_object, status=200)
 
@@ -115,9 +116,9 @@ def calculate_nutrition_score_from_image(request) -> Response:
 
     try:
         food_type = request.data.get("food_type", ns.GENERAL_FODD)
-        profiles = request.data.get("profiles", {})
+        profile = json.loads(request.data.get("nutritionProfile", {}))
 
-        food_object = helpers.process_image_and_calculate(temp_file_path, food_type, profiles)
+        food_object = helpers.process_image_and_calculate(temp_file_path, food_type, profile)
 
     finally:
         # Clean up the temporary file
