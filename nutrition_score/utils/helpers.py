@@ -176,7 +176,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
 
         max_additive_penalty = profiles.get(c.MAX_ADDITIVES_PENALTY) or c.MAX_ADDITIVES_PENALTY_DEFAULT_VALUE
 
-        additives_risk = calculate_additive_risk(additives)
+        additives_risk, additives_list = calculate_additive_risk(additives)
 
         additives_risk = min(additives_risk, max_additive_penalty)
 
@@ -197,7 +197,7 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
             "image": image,
             "ingredients": ingredients,
             "nutriscore_scaled_100": nutriscore_scaled_100,
-            "additives": additives,
+            "additives": additives_list,
             "additives_risk": additives_risk,
             "organic": organic,
             "final_score": final_score,
@@ -331,9 +331,21 @@ def convert_nutri_score(nutri_score: int, solid: bool) -> int:
             return data[str(nutri_score)]["liquid"]
 
 
-def calculate_additive_risk(additives: list[str]) -> int:
+def calculate_additive_risk(additives: list[str]) -> tuple[int, list[dict]]:
     """
     Search for an additive by name and return its risk level
+
+    Parameters
+    ----------
+    additives : list[str]
+        A list of additives.
+
+    Returns
+    -------
+    total_risk: int
+        The total risk of the additives.
+    additives_dict: list[dict]
+        A list of dictionaries containing the additive name, e-number, type, and risk level.
     """
     # Get the current file's directory
     current_dir = os.path.dirname(__file__)
@@ -350,6 +362,8 @@ def calculate_additive_risk(additives: list[str]) -> int:
     risk_level_present = [False, False, False, False]
     total_risk = 0
 
+    additives_list = []
+
     for item in data:
         for additive in additives:
             if additive in item.get("e-number"):
@@ -361,6 +375,9 @@ def calculate_additive_risk(additives: list[str]) -> int:
 
                 risk_level_present[risk_level] = True
                 total_risk += c.RISK_PER_ADDITIVE_PENALTY[risk_level]
+                additives_list.append(
+                    {"e-number": additive, "name": item.get("name"), "type": item.get("type"), "risk": risk_level}
+                )
 
     # Add the additive presence penalty for the additive in the highest risk level
     for i in range(len(risk_level_present) - 1, -1, -1):
@@ -368,7 +385,7 @@ def calculate_additive_risk(additives: list[str]) -> int:
             total_risk += c.RISK_ADDITIVE_PRESENCE_PENALTY[i]
             break
 
-    return total_risk
+    return total_risk, additives_list
 
 
 if __name__ == "__main__":
