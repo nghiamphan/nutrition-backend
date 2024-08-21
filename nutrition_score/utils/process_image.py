@@ -194,8 +194,47 @@ def extract_all_nutrient_info(text) -> dict:
     return nutritions
 
 
+def extract_ingredients(text) -> list:
+    """
+    Extract the ingredients from the text.
+
+    Parameters
+    ----------
+    text : str
+        The text extracted from the image.
+
+    Returns
+    -------
+    ingredients: list
+        A list of ingredients.
+    """
+    ingredients = []
+    capture = False
+    ingredients_text = ""
+
+    for line in text.splitlines():
+        if capture:
+            ingredients_text += " " + line.strip()
+        elif re.search(r"\bingredients\b", line, re.IGNORECASE):
+            capture = True
+            # Extract the ingredients after the word "ingredients"
+            match = re.search(r"\bingredients\b\s*:\s*(.*)", line, re.IGNORECASE)
+            if match:
+                ingredients_text += match.group(1)
+
+    # Split by comma or period, strip whitespace, and remove non-numeric/alphabet characters
+    ingredients = [
+        re.sub(r"[^a-zA-Z0-9\s]", "", ingredient.strip())
+        for ingredient in re.split(r"[,.]", ingredients_text)
+        if ingredient.strip()
+    ]
+
+    return ingredients
+
+
 if __name__ == "__main__":
-    image_name = "nutrition_label.jpg"
+    # image_name = "nutrition_label.jpg"
+    image_name = "ingredients.jpg"
 
     # Get the directory of the current script
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -209,8 +248,12 @@ if __name__ == "__main__":
     text = extract_text_from_image(image_path)
     print(text)
 
-    serving_info = extract_serving_info(text)
-    print("Serving info:", serving_info)
+    if image_name.startswith("nutrition"):
+        serving_info = extract_serving_info(text)
+        print("Serving info:", serving_info)
 
-    nutritions = extract_all_nutrient_info(text)
-    print("Nutrition data:", nutritions)
+        nutritions = extract_all_nutrient_info(text)
+        print("Nutrition data:", nutritions)
+    else:
+        ingredients = extract_ingredients(text)
+        print("Ingredients:", ingredients)

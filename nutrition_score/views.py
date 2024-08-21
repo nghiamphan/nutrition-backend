@@ -76,7 +76,7 @@ def calculate_nutrition_score(request, barcode=None) -> Response:
 @api_view(["POST"])
 def calculate_nutrition_score_from_image(request) -> Response:
     """
-    Given an image of a nutrition label, calculate the nutrition score of the product.
+    Given images of a nutrition label and ingredients, calculate the nutrition score of the product.
 
     Parameters
     ----------
@@ -94,7 +94,7 @@ def calculate_nutrition_score_from_image(request) -> Response:
                 "max_additives_penalty": 50,
                 "non_organic_penalty": 10,
             }
-            "image": "Image file",
+            "images": ["Image file 1", "Image file 2"],
         }
 
     Returns
@@ -102,27 +102,29 @@ def calculate_nutrition_score_from_image(request) -> Response:
     Response
         The response object containing the nutrition score and various information of the product.
     """
-    # Check if an image file is included in the request
-    if "image" not in request.FILES:
-        return Response({"error": "Image file is required"}, status=400)
+    # Check if image files are included in the request
+    if "images" not in request.FILES or not (1 <= len(request.FILES.getlist("images")) <= 2):
+        return Response({"error": "One or two image files are required in the request"}, status=400)
 
-    image: InMemoryUploadedFile = request.FILES["image"]
-
-    # Save the uploaded image to a temporary file
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        for chunk in image.chunks():
-            temp_file.write(chunk)
-        temp_file_path = temp_file.name
+    images = request.FILES.getlist("images")
+    temp_file_paths = []
 
     try:
-        food_type = request.data.get("food_type", ns.GENERAL_FODD)
+        # Save the images to temporary files
+        for image in images:
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                for chunk in image.chunks():
+                    temp_file.write(chunk)
+                temp_file_paths.append(temp_file.name)
+
+        food_type = request.data.get("food_type", ns.GENERAL_FOOD)
         profile = json.loads(request.data.get("nutritionProfile", {}))
 
-        food_object = helpers.process_image_and_calculate(temp_file_path, food_type, profile)
+        food_object = helpers.process_image_and_calculate(temp_file_paths, food_type, profile)
 
     finally:
-        # Clean up the temporary file
-        temp_file.close()
-        os.remove(temp_file_path)
+        # Clean up the temporary files
+        for temp_file_path in temp_file_paths:
+            os.remove(temp_file_path)
 
     return Response(food_object, status=200)

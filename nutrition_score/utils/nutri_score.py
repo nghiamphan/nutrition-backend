@@ -1,5 +1,5 @@
 # Food types
-GENERAL_FODD = "general_food"
+GENERAL_FOOD = "general_food"
 RED_MEAT = "red_meat"
 CHEESE = "cheese"
 FATS_NUTS_SEEDS = "fats_oils_nuts_seeds"
@@ -44,7 +44,7 @@ FATS_NUTS_SEEDS_CATEGORY_THRESHOLD = [(-6, "A"), (2, "B"), (10, "C"), (18, "D")]
 BEVERAGES_CATEGORY_THRESHOLD = [(1, "B"), (6, "C"), (9, "D")]
 
 # Error Messages
-INVALID_FOOD_TYPE = f"Invalid food type: {{}}. Must be one of {GENERAL_FODD}, {RED_MEAT}, {CHEESE}, {FATS_NUTS_SEEDS}, {BEVERAGES}, {WATER}."
+INVALID_FOOD_TYPE = f"Invalid food type: {{}}. Must be one of {GENERAL_FOOD}, {RED_MEAT}, {CHEESE}, {FATS_NUTS_SEEDS}, {BEVERAGES}, {WATER}."
 
 
 class NutriScoreCalculator:
@@ -102,7 +102,7 @@ class NutriScoreCalculator:
         return len(threshold_list)
 
     def calculate_negative_points(self, food_type: str) -> int:
-        if food_type in [GENERAL_FODD, RED_MEAT, CHEESE]:
+        if food_type in [GENERAL_FOOD, RED_MEAT, CHEESE]:
             energy_points = self.points_by_threshold(self.energy, ENERGY_THRESHOLD)
             saturated_fat_points = self.points_by_threshold(self.saturated_fat, SATURATED_FAT_THRESHOLD)
             sugars_points = self.points_by_threshold(self.sugars, SUGARS_THRESHOLD)
@@ -143,7 +143,7 @@ class NutriScoreCalculator:
             protein_points = self.points_by_threshold(self.protein, PROTEIN_BEVERAGES_THRESHOLD)
             fruit_points = self.points_by_threshold(self.fruit_percentage, FRUIT_BEVERAGES_THRESHOLD)
 
-        if food_type in [GENERAL_FODD, RED_MEAT, CHEESE]:
+        if food_type in [GENERAL_FOOD, RED_MEAT, CHEESE]:
             # If food type is red meat, the number of points for protein is limited to 2
             if food_type == RED_MEAT:
                 protein_points = min(protein_points, 2)
@@ -184,7 +184,7 @@ class NutriScoreCalculator:
         nutri-score: int
             the calculated Nutri-Score.
         """
-        if food_type not in [GENERAL_FODD, RED_MEAT, CHEESE, FATS_NUTS_SEEDS, BEVERAGES, WATER]:
+        if food_type not in [GENERAL_FOOD, RED_MEAT, CHEESE, FATS_NUTS_SEEDS, BEVERAGES, WATER]:
             raise ValueError(INVALID_FOOD_TYPE.format(food_type))
 
         # By default, water has a Nutri-Score of 0
@@ -246,7 +246,7 @@ class NutriScoreCalculator:
         # By default, water has a Nutri-Score category of "A"
         if food_type == WATER:
             return "A"
-        elif food_type in [GENERAL_FODD, RED_MEAT, CHEESE]:
+        elif food_type in [GENERAL_FOOD, RED_MEAT, CHEESE]:
             category_threshold = GENERAL_FODD_CATEGORY_THRESHOLD
         elif food_type == FATS_NUTS_SEEDS:
             category_threshold = FATS_NUTS_SEEDS_CATEGORY_THRESHOLD

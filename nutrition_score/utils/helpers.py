@@ -7,6 +7,7 @@ import sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
+from utils import additive_search
 from utils import constants as c
 from utils import nutri_score as ns
 from utils import process_image
@@ -166,17 +167,17 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         elif nutriscore_2023_data.get("is_water"):
             food_type = ns.WATER
         else:
-            food_type = ns.GENERAL_FODD
+            food_type = ns.GENERAL_FOOD
 
         nutriscore_scaled_100 = calculate_nutriscore_scale_100(nutritions, food_type, profiles)
 
         # Get the additives and calculate the risk
-        additives = product.get("additives_tags", [])
-        additives = [additive.replace("en:", "") for additive in additives]
+        additive_e_numbers = product.get("additives_tags", [])
+        additive_e_numbers = [additive.replace("en:", "") for additive in additive_e_numbers]
 
         max_additive_penalty = profiles.get(c.MAX_ADDITIVES_PENALTY) or c.MAX_ADDITIVES_PENALTY_DEFAULT_VALUE
 
-        additives_risk, additives_list = calculate_additive_risk(additives)
+        additives_risk, additives_list = search_and_calculate_additive_risk(additive_e_numbers)
 
         additives_risk = min(additives_risk, max_additive_penalty)
 
@@ -209,14 +210,14 @@ def fetch_and_calculate(barcode: str, profiles: dict) -> dict:
         return None
 
 
-def process_image_and_calculate(image_path: str, food_type: str, profiles: dict) -> dict:
+def process_image_and_calculate(image_paths: list[str], food_type: str, profiles: dict) -> dict:
     """
-    Calculate the nutrition score of a product from an image of a nutrition label.
+    Calculate the nutrition score of a product from its nutrition label and ingredients images.
 
     Parameters
     ----------
-    image_path : str
-        The path to the image file.
+    image_paths : list[str]
+        A list of image paths. The first image is the nutrition label image, and the second image is the ingredients image.
     food_type : str
         The type of food product.
     profiles : dict
@@ -227,10 +228,22 @@ def process_image_and_calculate(image_path: str, food_type: str, profiles: dict)
     product information : dict
         The product information including its name, image, ingredients, nutri-score, additives, additives risk, organic, and final score, food type, and nutritional values.
     """
-    text = process_image.extract_text_from_image(image_path)
+    text = process_image.extract_text_from_image(image_paths[0])
     nutritions = process_image.extract_all_nutrient_info(text)
 
+    additives_risk, additives_list = 0, []
+    if len(image_paths) > 1:
+        ingredients_text = process_image.extract_text_from_image(image_paths[1])
+        ingredients = process_image.extract_ingredients(ingredients_text)
+        additives = additive_search.search_additives(ingredients)
+        additives_risk, additives_list = calculate_additive_risk(additives)
+
+        max_additive_penalty = profiles.get(c.MAX_ADDITIVES_PENALTY) or c.MAX_ADDITIVES_PENALTY_DEFAULT_VALUE
+
+        additives_risk = min(additives_risk, max_additive_penalty)
+
     nutriscore_scaled_100 = calculate_nutriscore_scale_100(nutritions, food_type, profiles)
+    final_score = max(nutriscore_scaled_100 - additives_risk, 0)
 
     food_object = {
         "name": "",
@@ -238,10 +251,10 @@ def process_image_and_calculate(image_path: str, food_type: str, profiles: dict)
         "image": "",
         "ingredients": "",
         "nutriscore_scaled_100": nutriscore_scaled_100,
-        "additives": [],
-        "additives_risk": 0,
+        "additives": additives_list,
+        "additives_risk": additives_risk,
         "organic": False,
-        "final_score": nutriscore_scaled_100,
+        "final_score": final_score,
         "food_type": food_type,
         **nutritions,
     }
@@ -331,14 +344,57 @@ def convert_nutri_score(nutri_score: int, solid: bool) -> int:
             return data[str(nutri_score)]["liquid"]
 
 
-def calculate_additive_risk(additives: list[str]) -> tuple[int, list[dict]]:
+def calculate_additive_risk(additives: list[object]) -> tuple[int, list[dict]]:
     """
-    Search for an additive by name and return its risk level
+    Given a list of additive objects, calculate the total risk of the additives.
 
     Parameters
     ----------
-    additives : list[str]
-        A list of additives.
+    additives : list[object]
+        A list of additive objects.
+
+    Returns
+    -------
+    total_risk: int
+        The total risk of the additives.
+    additives_dict: list[dict]
+        A list of dictionaries containing the additive name, e-number, type, and risk level.
+    """
+    risk_level_present = [False, False, False, False]
+    total_risk = 0
+
+    additives_list = []
+
+    for item in additives:
+        # Get the risk level of the additive: 0: no risk, 1: low risk, 2: moderate risk, 3: high risk
+        if item.get("efsa_risk") != -1:
+            risk_level = item.get("efsa_risk")
+        else:
+            risk_level = item.get("risk")
+
+        risk_level_present[risk_level] = True
+        total_risk += c.RISK_PER_ADDITIVE_PENALTY[risk_level]
+        additives_list.append(
+            {"e-number": item.get("e-number"), "name": item.get("name"), "type": item.get("type"), "risk": risk_level}
+        )
+
+    # Add the additive presence penalty for the additive in the highest risk level
+    for i in range(len(risk_level_present) - 1, -1, -1):
+        if risk_level_present[i]:
+            total_risk += c.RISK_ADDITIVE_PRESENCE_PENALTY[i]
+            break
+
+    return total_risk, additives_list
+
+
+def search_and_calculate_additive_risk(additive_e_numbers: list[str]) -> tuple[int, list[dict]]:
+    """
+    Given a list of additive e-numbers, search for the additives in the database and calculate the total risk of the additives.
+
+    Parameters
+    ----------
+    additive_e_numbers : list[str]
+        A list of additive e-numbers. Eg: ["e100", "e200"]
 
     Returns
     -------
@@ -359,33 +415,17 @@ def calculate_additive_risk(additives: list[str]) -> tuple[int, list[dict]]:
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    risk_level_present = [False, False, False, False]
-    total_risk = 0
-
-    additives_list = []
+    additives = []
 
     for item in data:
-        for additive in additives:
-            if additive in item.get("e-number"):
-                # Get the risk level of the additive: 0: no risk, 1: low risk, 2: moderate risk, 3: high risk
-                if item.get("efsa_risk") != -1:
-                    risk_level = item.get("efsa_risk")
-                else:
-                    risk_level = item.get("risk")
+        for e_number in additive_e_numbers:
+            if e_number == item.get("e-number"):
+                additives.append(item)
+                break
 
-                risk_level_present[risk_level] = True
-                total_risk += c.RISK_PER_ADDITIVE_PENALTY[risk_level]
-                additives_list.append(
-                    {"e-number": additive, "name": item.get("name"), "type": item.get("type"), "risk": risk_level}
-                )
+    total_risk, additives = calculate_additive_risk(additives)
 
-    # Add the additive presence penalty for the additive in the highest risk level
-    for i in range(len(risk_level_present) - 1, -1, -1):
-        if risk_level_present[i]:
-            total_risk += c.RISK_ADDITIVE_PRESENCE_PENALTY[i]
-            break
-
-    return total_risk, additives_list
+    return total_risk, additives
 
 
 if __name__ == "__main__":
